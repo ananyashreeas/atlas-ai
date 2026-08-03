@@ -16,11 +16,12 @@ export default function ChatPage() {
     {
       sender: "ai",
       message:
-        "Hello Ananya! I'm Atlas AI. Ask me anything about your studies.",
+        "Hello Ananya! 👋 I'm Atlas AI. Ask me anything about your studies.",
     },
   ]);
 
   const handleSend = (message: string) => {
+    // Add user's message
     setMessages((prev) => [
       ...prev,
       {
@@ -28,6 +29,18 @@ export default function ChatPage() {
         message,
       },
     ]);
+
+    // Fake AI reply after 1 second
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "ai",
+          message:
+            "That's a great question! 🤖\n\nFor now I'm running in demo mode.\nSoon I'll answer using Google's Gemini AI.",
+        },
+      ]);
+    }, 1000);
   };
 
   return (
