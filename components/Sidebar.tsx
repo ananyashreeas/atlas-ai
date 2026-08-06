@@ -22,6 +22,8 @@ export default function Sidebar() {
 
         <Link href="/dashboard/planner">📅 Study Planner</Link>
 
+        <Link href="/dashboard/pdf">📄 PDF Workspace</Link>
+
         <Link href="/dashboard/analytics">📊 Analytics</Link>
 
         <Link href="/dashboard/settings">⚙️ Settings</Link>
