@@ -1,25 +1,40 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { getPDFs } from "@/app/lib/storage";
+import PDFViewer from "@/components/PDFViewer";
 
 export default function PDFWorkspace() {
   const params = useParams();
 
   const id = Number(params.id);
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const pdf = useMemo(() => {
     return getPDFs().find((item) => item.id === id);
   }, [id]);
 
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center h-[70vh]">
+        <p className="text-slate-400 text-lg">
+          Loading PDF...
+        </p>
+      </div>
+    );
+  }
+
   if (!pdf) {
     return (
       <div className="flex items-center justify-center h-[70vh]">
-
         <div className="text-center">
-
           <h1 className="text-3xl font-bold">
             PDF Not Found
           </h1>
@@ -27,9 +42,7 @@ export default function PDFWorkspace() {
           <p className="text-slate-400 mt-3">
             The requested document doesn't exist.
           </p>
-
         </div>
-
       </div>
     );
   }
@@ -38,7 +51,6 @@ export default function PDFWorkspace() {
     <div className="space-y-8">
 
       <div>
-
         <h1 className="text-4xl font-bold">
           📄 {pdf.name}
         </h1>
@@ -47,6 +59,9 @@ export default function PDFWorkspace() {
           Uploaded on {pdf.uploadedAt}
         </p>
 
+        <div className="mt-8">
+          <PDFViewer path={pdf.path} />
+        </div>
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
@@ -70,35 +85,43 @@ export default function PDFWorkspace() {
       <div className="grid md:grid-cols-2 gap-6">
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-          <h2 className="text-xl font-bold">📋 Summary</h2>
+          <h2 className="text-xl font-bold">
+            📋 Summary
+          </h2>
+
           <p className="mt-4 text-slate-400">
             AI summary will appear here.
           </p>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-          <h2 className="text-xl font-bold">🧠 Flashcards</h2>
+          <h2 className="text-xl font-bold">
+            🧠 Flashcards
+          </h2>
+
           <p className="mt-4 text-slate-400">
             Flashcards will appear here.
           </p>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-          <h2 className="text-xl font-bold">❓ Quiz Generator</h2>
+          <h2 className="text-xl font-bold">
+            ❓ Quiz Generator
+          </h2>
 
           <button className="mt-4 bg-yellow-400 text-black px-5 py-3 rounded-xl font-semibold hover:bg-yellow-300 transition">
             Generate Quiz
           </button>
-
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-          <h2 className="text-xl font-bold">🗺️ Mind Map</h2>
+          <h2 className="text-xl font-bold">
+            🗺️ Mind Map
+          </h2>
 
           <p className="mt-4 text-slate-400">
             Mind map will appear here.
           </p>
-
         </div>
 
       </div>

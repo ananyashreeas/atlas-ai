@@ -27,16 +27,24 @@ export default function PDFPage() {
       return;
     }
 
+    const { data } = supabase.storage
+      .from("pdfs")
+      .getPublicUrl(fileName);
+
+    console.log("Public URL:", data.publicUrl);
+
     const newFile: PDFItem = {
       id: Date.now(),
       name: file.name,
       uploadedAt: new Date().toLocaleString(),
+      path: fileName,
     };
+
+    console.log("Saving PDF:", newFile);
 
     const updated = [...files, newFile];
 
     setFiles(updated);
-
     savePDFs(updated);
 
     alert("PDF uploaded successfully!");
@@ -46,15 +54,12 @@ export default function PDFPage() {
     const updated = files.filter((file) => file.id !== id);
 
     setFiles(updated);
-
     savePDFs(updated);
   };
 
   return (
     <div className="space-y-8">
-
       <div>
-
         <h1 className="text-4xl font-bold">
           📄 PDF Workspace
         </h1>
@@ -62,13 +67,11 @@ export default function PDFPage() {
         <p className="text-slate-400 mt-2">
           Upload your study material and let Atlas AI help you learn smarter.
         </p>
-
       </div>
 
       <PDFUpload onUpload={handleUpload} />
 
       <div className="space-y-4">
-
         {files.length === 0 && (
           <div className="text-slate-500 text-center py-12 border border-dashed border-slate-700 rounded-2xl">
             No PDFs uploaded yet.
@@ -84,9 +87,7 @@ export default function PDFPage() {
             onDelete={() => deleteFile(file.id)}
           />
         ))}
-
       </div>
-
     </div>
   );
 }

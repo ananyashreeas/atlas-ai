@@ -2,6 +2,7 @@ export type PDFItem = {
   id: number;
   name: string;
   uploadedAt: string;
+  path: string;
 };
 
 const STORAGE_KEY = "atlas-ai-pdfs";
