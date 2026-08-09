@@ -13,6 +13,7 @@
     "@google/generative-ai": "^0.24.1",
     "@langchain/textsplitters": "^1.0.1",
     "@supabase/supabase-js": "^2.112.1",
+    "@xyflow/react": "^12.11.2",
     "langchain": "^1.5.5",
     "next": "16.2.12",
     "pdfjs-dist": "^6.2.108",

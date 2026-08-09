@@ -1,5 +1,5 @@
 "use client";
-
+import MindMap from "@/components/MindMap";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
@@ -1146,18 +1146,184 @@ export default function PDFWorkspace() {
 
         </div>
 
-        {/* MIND MAP */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+      {/* MIND MAP */}
+<div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
 
-          <h2 className="text-xl font-bold">
-            🗺️ Mind Map
-          </h2>
+  <div className="flex items-center justify-between">
+    <div>
+      <h2 className="text-xl font-bold">
+        🗺️ Mind Map
+      </h2>
 
-          <p className="mt-4 text-slate-400">
-            Mind map will appear here.
-          </p>
+      <p className="mt-2 text-slate-400">
+        Generate an interactive mind map from this PDF.
+      </p>
+    </div>
 
-        </div>
+    <button
+      onClick={async () => {
+        try {
+          setLoading(true);
+
+          const searchResponse = await fetch("/api/search", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              query:
+                "Give me the main concepts, important topics, definitions, processes, formulas, relationships, and key ideas from this PDF.",
+              question:
+                "Give me the main concepts, important topics, definitions, processes, formulas, relationships, and key ideas from this PDF.",
+              pdfPath: pdf.path,
+            }),
+          });
+
+          const searchData = await searchResponse.json();
+
+          console.log(
+            "MIND MAP SEARCH RESULT:",
+            searchData
+          );
+
+          if (
+            !searchResponse.ok ||
+            !searchData.success
+          ) {
+            throw new Error(
+              searchData.error ||
+                "Failed to retrieve PDF content."
+            );
+          }
+
+          const chunks =
+            searchData.chunks || [];
+
+          if (chunks.length === 0) {
+            throw new Error(
+              "No relevant PDF content was found."
+            );
+          }
+
+          const context = chunks
+            .map(
+              (chunk: any, index: number) =>
+                `--- PDF CHUNK ${index + 1} ---\n${
+                  chunk.content || ""
+                }`
+            )
+            .join("\n\n");
+
+          console.log(
+            "========== MIND MAP CONTEXT =========="
+          );
+          console.log(context);
+          console.log(
+            "========== END MIND MAP CONTEXT =========="
+          );
+
+          const mindMapResponse = await fetch(
+            "/api/mindmap",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                context,
+              }),
+            }
+          );
+
+          const mindMapData =
+            await mindMapResponse.json();
+
+          console.log(
+            "GENERATED MIND MAP:",
+            mindMapData
+          );
+
+          if (
+            !mindMapResponse.ok ||
+            !mindMapData.success
+          ) {
+            throw new Error(
+              mindMapData.error ||
+                "Failed to generate mind map."
+            );
+          }
+
+          sessionStorage.setItem(
+            `mindmap-${pdf.id}`,
+            JSON.stringify(
+              mindMapData.mindMap
+            )
+          );
+
+          window.location.reload();
+        } catch (error: any) {
+          console.error(
+            "MIND MAP ERROR:",
+            error
+          );
+
+          alert(
+            error?.message ||
+              "Something went wrong while generating the mind map."
+          );
+        } finally {
+          setLoading(false);
+        }
+      }}
+      disabled={loading}
+      className="bg-yellow-400 text-black px-5 py-3 rounded-xl font-semibold hover:bg-yellow-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {loading
+        ? "Generating..."
+        : "Generate Mind Map"}
+    </button>
+  </div>
+
+  <div className="mt-6">
+    {typeof window !== "undefined" &&
+      (() => {
+        const saved =
+          sessionStorage.getItem(
+            `mindmap-${pdf.id}`
+          );
+
+        if (!saved) {
+          return (
+            <div className="border border-dashed border-slate-700 rounded-xl p-10 text-center text-slate-500">
+              Your AI-generated mind map will appear here.
+            </div>
+          );
+        }
+
+        try {
+          const mindMap =
+            JSON.parse(saved);
+
+          return (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">
+                {mindMap.title}
+              </h3>
+
+              <MindMap data={mindMap} />
+            </div>
+          );
+        } catch {
+          return (
+            <div className="text-red-400">
+              Could not load the generated mind map.
+            </div>
+          );
+        }
+      })()}
+  </div>
+
+</div>
 
       </div>
 
