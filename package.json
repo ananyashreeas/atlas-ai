@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "^2.16.0",
+    "@google/generative-ai": "^0.24.1",
     "@langchain/textsplitters": "^1.0.1",
     "@supabase/supabase-js": "^2.112.1",
     "langchain": "^1.5.5",
