@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/app/lib/supabase-server";
 
 const genAI = new GoogleGenerativeAI(
   process.env.GEMINI_API_KEY!
@@ -22,6 +23,7 @@ export async function POST(req: Request) {
     if (!question || !context || !pdfId) {
       return NextResponse.json(
         {
+          success: false,
           error:
             "Question, context and pdfId are required.",
         },
@@ -30,18 +32,44 @@ export async function POST(req: Request) {
     }
 
     // -----------------------------------------
-    // 1. Get previous conversation
+    // 1. Get currently logged-in user
     // -----------------------------------------
 
-    const { data: previousMessages, error: historyError } =
-      await supabase
-        .from("chat_messages")
-        .select("role, content")
-        .eq("pdf_id", pdfId)
-        .order("created_at", {
-          ascending: true,
-        })
-        .limit(20);
+    const supabaseServer =
+      await createServerClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } =
+      await supabaseServer.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "You must be logged in.",
+        },
+        { status: 401 }
+      );
+    }
+
+    // -----------------------------------------
+    // 2. Get previous conversation
+    // -----------------------------------------
+
+    const {
+      data: previousMessages,
+      error: historyError,
+    } = await supabase
+      .from("chat_messages")
+      .select("role, content")
+      .eq("pdf_id", pdfId)
+      .eq("user_id", user.id)
+      .order("created_at", {
+        ascending: true,
+      })
+      .limit(20);
 
     if (historyError) {
       console.error(
@@ -51,21 +79,33 @@ export async function POST(req: Request) {
     }
 
     // -----------------------------------------
-    // 2. Save user's question
+    // 3. Save user's question
     // -----------------------------------------
 
-    await supabase.from("chat_messages").insert({
-      pdf_id: pdfId,
-      role: "user",
-      content: question,
-    });
+    const { error: questionSaveError } =
+      await supabase
+        .from("chat_messages")
+        .insert({
+          pdf_id: pdfId,
+          user_id: user.id,
+          role: "user",
+          content: question,
+        });
+
+    if (questionSaveError) {
+      console.error(
+        "Failed to save user message:",
+        questionSaveError
+      );
+    }
 
     // -----------------------------------------
-    // 3. Build conversation history
+    // 4. Build conversation history
     // -----------------------------------------
 
     const historyText =
-      previousMessages && previousMessages.length > 0
+      previousMessages &&
+      previousMessages.length > 0
         ? previousMessages
             .map(
               (message) =>
@@ -75,7 +115,7 @@ export async function POST(req: Request) {
         : "No previous conversation.";
 
     // -----------------------------------------
-    // 4. Ask Gemini
+    // 5. Ask Gemini
     // -----------------------------------------
 
     const model = genAI.getGenerativeModel({
@@ -110,20 +150,25 @@ ${question}
 Now answer the user's question.
 `;
 
-    const result = await model.generateContent(prompt);
+    const result =
+      await model.generateContent(prompt);
 
-    const answer = result.response.text();
+    const answer =
+      result.response.text();
 
     // -----------------------------------------
-    // 5. Save Atlas's answer
+    // 6. Save Atlas's answer
     // -----------------------------------------
 
     const { error: saveError } =
-      await supabase.from("chat_messages").insert({
-        pdf_id: pdfId,
-        role: "assistant",
-        content: answer,
-      });
+      await supabase
+        .from("chat_messages")
+        .insert({
+          pdf_id: pdfId,
+          user_id: user.id,
+          role: "assistant",
+          content: answer,
+        });
 
     if (saveError) {
       console.error(

@@ -12,6 +12,7 @@
     "@google/genai": "^2.16.0",
     "@google/generative-ai": "^0.24.1",
     "@langchain/textsplitters": "^1.0.1",
+    "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.1",
     "@xyflow/react": "^12.11.2",
     "langchain": "^1.5.5",
