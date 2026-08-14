@@ -4,8 +4,9 @@ import { FormEvent, useState } from "react";
 import { createClient } from "@/app/lib/supabase-browser";
 import { useRouter } from "next/navigation";
 
+const supabase = createClient();
+
 export default function AuthPage() {
-  const supabase = createClient();
   const router = useRouter();
 
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -14,9 +15,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  const handleSubmit = async (
-    event: FormEvent
-  ) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
     setLoading(true);
@@ -24,11 +23,10 @@ export default function AuthPage() {
 
     try {
       if (mode === "signup") {
-        const { error } =
-          await supabase.auth.signUp({
-            email,
-            password,
-          });
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
 
         if (error) {
           throw error;
@@ -42,7 +40,7 @@ export default function AuthPage() {
         return;
       }
 
-      const { error } =
+      const { data, error } =
         await supabase.auth.signInWithPassword({
           email,
           password,
@@ -52,14 +50,31 @@ export default function AuthPage() {
         throw error;
       }
 
+      if (!data.user) {
+        throw new Error("Login succeeded, but no user session was created.");
+      }
+
+      // Verify that Supabase actually has the logged-in user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error(
+          "Login succeeded, but the Supabase session could not be found."
+        );
+      }
+
+      console.log("SUPABASE LOGIN SUCCESS:", user.email);
+
       router.push("/dashboard");
       router.refresh();
     } catch (error: any) {
       console.error("AUTH ERROR:", error);
 
       setMessage(
-        error?.message ||
-          "Something went wrong."
+        error?.message || "Something went wrong."
       );
     } finally {
       setLoading(false);
@@ -68,7 +83,6 @@ export default function AuthPage() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-6">
-
       <div className="w-full max-w-md">
 
         <div className="text-center mb-8">
@@ -180,7 +194,6 @@ export default function AuthPage() {
         </div>
 
       </div>
-
     </main>
   );
 }
